@@ -1,0 +1,151 @@
+Blender 3. beadandó leírás -- Godó Dániel - XE8Y30
+
+1) Plane objektum lehelyezése és kijelölése
+
+2) Objektum scale (S) x tengelyen 0.7 és y tengelyen 0.8
+
+3) Extrude (E) z tengelyen 1.3
+
+4) Loop Cut and Slide (CTRL + R) vízszintesen a felénél
+
+5) Scale (S) x tengelyen 1.4
+
+6) Elülső oldalon 
+	a) 2 lap kijelölése
+	b) Extrude (E) z tengelyen 0.8
+	c) Scale (S) mindhárom tengelyen 0.65
+	d) Grab (G) z tengelyen -0.230
+	e) Extrude (E) z tengelyen 2.2
+	f) Scale (S) mindhárom tengelyen 0.75
+	g) Extrude (E) z tengelyen 0.15
+	h) Scale (S) mindhárom tengelyen 1.3
+	i) Extrude (E) z tengelyen 0.8
+	j) Scale (S) mindhárom tengelyen 0.6
+
+7) Elülső lapnak felső és alsó vízszintes él
+	a) Kiválasztása
+	b) Edge Slide (G x2) factor: 0.6
+
+8) Kabin megcsinálása
+	a) Knife (K) orr és kabin közti pont kiválasztása 'C' hogy csak vízszintesen tudjon menni, majd kabin hosszáig kihúzásak
+	b) Kabin másik oldalának megcsinálása az a) lépés megismétlésével
+	c) Kabin 3 részének kiválasztása
+	d) Inset Faces + Individual (I x2) Thickness 0.06
+	e) Extrude Faces along Normals (ALT + E) Offset 0.08
+
+9) Hajótest hátulja (Hátsó 2 lap)
+	a) Lapok kijelölése
+	b) Grab y tengelyen -0.4
+
+10) Kabin teteje
+	a) Lap kijelölése
+	b) Inset Faces (I) Thickness 0.2
+	c) Extrude z tengelyen -0.2
+	d) Duplicate (SHIFT + D)
+	e) Scale (S) mindhárom tengelyen 0.3
+	f) Grab (G) x tengelyen -0.25  és y tengelyen 0.48
+	g) Extrude z tengelyen 0.15
+	h) Duplicate (SHIFT + D)
+	i) Grab (G) y tengelyen -0.58
+	j) Eddigi 2 elem kijelölése
+	k) Duplicate (SHIFT + D)
+	l) Grab (G) x tengelyen 0.5
+
+	m) Jobb hátsó elem duplicate (SHIFT + D)
+	n) Grab (G) y tengelyen -0.6
+	o) Rotate (R) z tengelyen 90 fok
+	p) Grab (G) x tengelyen 0.25, y tengelyen 0.1
+	
+11) Középpont beállítás
+	a) Eddigi egész objektum kijelölése
+	b) Grab (G) z tengelyen -0.65
+	c) Object mode-ba váltás
+	d) Grab (G) z tengelyen 0.65
+
+12) Vissza váltás Edit Mode-ba (TAB)
+
+13) Szárny
+	a) Hajótest oldalél kiválasztása
+	b) Kurzor beállítása középpontba (SHIFT + S -> Cursor to Selected)
+	c) Átváltás Object nézetbe (TAB)
+	d) Plank hozzáadása (SHIFT + A)
+	e) Visszaváltás Edit mode-ba (TAB)
+	f) Grab (G) x tengelyen -1
+	g) Elülső él kiválasztása
+	h) Edge Slide (G x2) Factor 0.2
+	i) Küldő/hátsó sarokpont kiválasztása
+	j) Vertex Slide (G x2) Factor 0.55
+	k) Hátsó él kiválasztása
+	l) Grab (G) y tengelyen -0.5
+	m) Oldalsó él kiválasztása
+	n) Grab (G) x tengelyen -1.2
+	o) Teljes szárny kijelölése
+	p) Extrude (E) z tengelyen 0.1
+
+14) Hajtómű
+	a) Objektum nézetbe váltás (TAB)
+	b) Cylinder hozzáadása (Vertices: 8)
+	c) Rotate (R) x tengelyen 90 fok
+	d) Scale (S) minden tengelyen 0.4
+	e) Object mode (TAB)
+	f) Grab (G) x tengelyen -0.19, z tengelyen 0.5
+	g) Scale (S) y tengelyen 3.2
+	h) Grab (G) y tengelyen -0.28
+	i) Scale (S) x tengelyen 0.9 z tengelyen 0.9
+	j) Grab (G) x tengelyen 0.025, z tengelyen -0.04
+	k) Duplicate (SHIFT + D)
+	l) Scale (S) minden tengelyen 0.6
+	m) Extrude (E) z tengelyen 0.7
+	n) Hátsó pontok kijelölése
+	o) Push/Pull 0.54
+	p) Elülső lap kijelölése
+	q) Inset Faces (I) Thickness 0.25
+	r) Extrude (E) z tengelyen -0.25
+
+15) Fegyver
+	a) Szárny végén lévő kicsi lap kijelölése
+	b) Kurzor beállítása középpontba (SHIFT + S -> Cursor to Selected)
+	c) Object mode-ba váltás (TAB)
+	d) Cylinder hozzáadása
+	e) Scale (S) minden tengelyen 0.2
+	f) Rotate (R) x tengelyen 90 fok
+	g) Scale (S) y tengelyen 4.8
+	h) Elülső oldal kijelölése
+	i) Inset Faces (I) Thickness 0.55
+	j) Extrude (E) z tengelyen 1.65
+	k) Kurzor beállítása középpontba (SHIFT + S -> Cursor to Selected)
+	l) Object mode-ba váltás (TAB)
+	m) Circle hozzáadása (Vertices 12)
+	n) Edit mode-ba váltás (TAB)
+	o) Scale (S) y tengelyen 0.4
+	p) Elülső 5 sarokpont kijelölése
+	q) Delete Vertices (X)
+	r) Többi pont kijelölése
+	s) Extrude (E) z tengelyen 0.28
+	t) Grab (G) z tengelyen -0.12
+	u) Extrude Faces along Normals (ALT + E) Offset -0.1
+	v) Teljes objektum kiválasztása (A)
+	w) Grab (G) y tengelyen -0.2
+
+16) Szárny, hajtómű és fegyver egyesítés
+	a) Object mode (TAB)
+	b) Objektumok kijelölése (SHIFT + bal kattintás) FONTOS hogy a szárny legyen utoljára kijelölve
+
+17) Szárny középpont javítás
+	a) Grab (G) x tengelyen 0.96
+	b) Edit mode-ba váltás (TAB)
+	c) Grab (G) x tengelyen -0.96
+
+18) Szárny tükrözés
+	a) Jobb oldalt Modifier Properties kiválasztása (kék franciakulcs)
+	b) Mirror kiválasztása
+	c) Mirror Object attribútum beállítása a hajótest objektumra
+
+19) Hajótest hátulja
+	a) Edit mode-ba váltás
+	b) Hátsó oldal kijelölése
+	c) Grab (G) y tengelyen -0.14
+	d) Extrude (E) z tengelyen 0.5
+	e) Scale (S) mindhárom tengelyen 0.6
+	f) Inset Faces (I) Thickness 0.13
+	g) Extrude (E) z tengelyen 0.2

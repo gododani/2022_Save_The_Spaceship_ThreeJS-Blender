@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+    <meta charset=utf-8>
+    <title>Nagy beadandó - Godó Dániel / XE8Y30</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { width: 100%; height: 100% }
+        #info {
+            position: absolute;
+            top: 0;
+            left: 10px;
+            width: 50%;
+            text-align: left;
+            z-index: 100;
+            display:block;
+            color: white;
+            opacity: 1.0;
+        }
+    </style>
+</head>
+
+<body>
+<div><canvas id="myCanvas"></canvas></div>
+<div id="info">
+    <p>Godó Dániel - XE8Y30</p>
+    <p>Programtervező informatikus - 2022/23/1</p>
+
+</div>
+<script async src="./dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+    "imports": {
+        "three": "./js-r143/build/three.module.js",
+        "OBJLoader": "./js-r143/examples/jsm/loaders/OBJLoader.js",
+        "lil-gui": "./js-r143/examples/jsm/libs/lil-gui.module.min.js",
+        "trackballcontrols": "./js-r143/examples/jsm/controls/TrackballControls.js"
+    }
+}
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { TrackballControls } from 'trackballcontrols';
+    import { OBJLoader } from 'OBJLoader';
+    import { GUI } from 'lil-gui';
+
+    // Globális változók
+    let WIDTH, HEIGHT, aspectRatio;
+    let container, ctrl, info;
+    let renderer;
+    let scene, camera;
+    let controls;
+    let groupLoaded, groupParent, laserMesh, laserMesh2, laserPositionZ, laser2PositionZ, hiddenMesh, meteorMesh;
+    let distance = 0;
+    let ambientLight, sLight, pLight, dLight;
+
+    let meshController = function () {
+        this.meteor = 0;
+        this.daytime = false;
+        this.spotLight = true;
+        this.pointLight = true;
+        this.directionLight = true;
+    };
+
+    objectLoader();
+    // Animáció indítása
+    animate();
+
+    function addControlGui( controlObject ) {
+        let gui = new GUI( { autoPlace: false });
+        gui.add( controlObject, 'meteor', 0, 360 ).name("Meteor forgatása");
+        gui.add( controlObject, 'daytime' ).name("Nappal").onChange(function (e){
+            if (e){
+                ambientLight.intensity = 1;
+            }else{
+                ambientLight.intensity = 0.1;
+            }
+        });
+        gui.add( controlObject, 'spotLight' ).name("Reflektor fény").onChange(function (e){
+            if (e){
+                sLight.intensity = 0.9;
+            }else{
+                sLight.intensity = 0;
+            }
+        });
+        gui.add( controlObject, 'directionLight' ).name("Irány fény").onChange(function (e){
+            if (e){
+                dLight.intensity = 0.9;
+            }else{
+                dLight.intensity = 0;
+            }
+        });
+        gui.add( controlObject, 'pointLight' ).name("Pont fény").onChange(function (e){
+            if (e){
+                pLight.intensity = 0.9;
+            }else{
+                pLight.intensity = 0;
+            }
+        });
+
+        gui.domElement.style.position = 'absolute';
+        gui.domElement.style.top = '0px';
+        gui.domElement.style.right = '0px';
+        document.body.appendChild( gui.domElement );
+    }
+
+    function objectLoader(){
+        let objLoader = new OBJLoader();
+        objLoader.load(
+            // Forrás fájl
+            'assets/blender/urhajo.obj',
+            // Betöltés utáni függvény
+            function ( loaded ) {
+                groupLoaded = loaded;
+                groupLoaded.scale.set(2, 2, 2);
+                groupLoaded.castShadow = true;
+                groupLoaded.receiveShadow = true;
+
+                // Anyag hozzárendelés
+                groupLoaded.traverse( function ( child ) {
+                    if ( child instanceof THREE.Mesh ) {
+                        child.material = new THREE.MeshPhongMaterial();
+                    }
+                } );
+                init();
+            },
+            // Betöltés előrehaladása
+            function ( xhr ) {
+                console.log( (xhr.loaded / xhr.total * 100) + '% betöltve.' );
+            },
+            // Hiba betöltés közben
+            function ( xhr ) {
+                console.log( 'Hiba történt textúra betöltés közben!' );
+            });
+    }
+
+    function init() {
+        // Böngésző ablakméret lekérése és méretarány számítása
+        HEIGHT = window.innerHeight;
+        WIDTH = window.innerWidth;
+        aspectRatio = WIDTH / HEIGHT;
+        container = document.getElementById( 'myCanvas' );
+
+        // Renderer létrehozása és DOM-hoz adása
+        renderer = new THREE.WebGLRenderer( { antialias: true, canvas: container } );
+        renderer.setSize( WIDTH, HEIGHT );
+        renderer.setClearColor( 0x000000 );
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild( renderer.domElement );
+
+        // Színtér létrehozása
+        scene = new THREE.Scene();
+
+        // Kamera létrehozása és vetítési paramétereinek beállítása
+        camera = new THREE.PerspectiveCamera( 80, aspectRatio, 0.1, 1000 );
+        camera.position.set( 0, 30, 150 );
+        camera.lookAt( scene.position );
+
+
+
+        // Objektumok létrehozása
+
+        //Helper
+        let helper1 = new THREE.AxesHelper(20);
+        scene.add(helper1);
+
+        // HÁTSÓ ELEM VÉGE
+        let backEndConnectionGeometry = new THREE.CylinderGeometry( 8, 12, 3, 32, 1, false);
+        let backEndConnectionMaterial = new THREE.MeshPhongMaterial( { color: 0x008888, wireframe: false } );
+        let backEndConnectionMesh = new THREE.Mesh( backEndConnectionGeometry, backEndConnectionMaterial );
+        backEndConnectionMesh.position.x = 13;
+        backEndConnectionMesh.rotation.z = -Math.PI/2;
+        backEndConnectionMesh.scale.set(1,1.32,1);
+        backEndConnectionMesh.castShadow = true;
+        backEndConnectionMesh.receiveShadow = true;
+        scene.add( backEndConnectionMesh );
+
+        // HÁTSÓ ELEM
+        let backGeometry = new THREE.CylinderGeometry( 12, 12, 20, 32, 1, false);
+        let backMaterial = new THREE.MeshPhongMaterial( { color: 0x336633, wireframe: false } );
+        let backMesh = new THREE.Mesh( backGeometry, backMaterial );
+        backMesh.position.x = 1;
+        backMesh.rotation.x = Math.PI/2;
+        backMesh.rotation.z = Math.PI/2;
+        backMesh.castShadow = true;
+        backMesh.receiveShadow = true;
+        scene.add( backMesh );
+
+        // HÁTSÓ ELEM ÉS KÖZÉPSŐ ELEM CSATLAKOZÁS
+        let backConnectionGeometry = new THREE.CylinderGeometry( 8, 12, 3, 32, 1, false);
+        let backConnectionMaterial = new THREE.MeshPhongMaterial( { color: 0x008888, wireframe: false } );
+        let backConnectionMesh = new THREE.Mesh( backConnectionGeometry, backConnectionMaterial );
+        backConnectionMesh.position.x = -11;
+        backConnectionMesh.rotation.z = Math.PI/2;
+        backConnectionMesh.scale.set(1,1.32,1);
+        backConnectionMesh.castShadow = true;
+        backConnectionMesh.receiveShadow = true;
+        scene.add( backConnectionMesh );
+
+        // KÖZÉPSŐ ELEM
+        let middleGeometry = new THREE.CylinderGeometry( 8, 8, 12, 32, 1, false);
+        let middleMaterial = new THREE.MeshPhongMaterial( { color: 0x663333, wireframe: false } );
+        let middleMesh = new THREE.Mesh( middleGeometry, middleMaterial );
+        middleMesh.position.x = -19;
+        middleMesh.rotation.x = Math.PI/2;
+        middleMesh.rotation.z = Math.PI/2;
+        middleMesh.castShadow = true;
+        middleMesh.receiveShadow = true;
+        scene.add( middleMesh );
+
+        // Rejtett elem
+        let hiddenGeometry = new THREE.CylinderGeometry( 0, 0, 0, 0, 0, false);
+        let hiddenMaterial = new THREE.MeshPhongMaterial( { color: 0x663333, wireframe: false } );
+        hiddenMesh = new THREE.Mesh( hiddenGeometry, hiddenMaterial );
+        hiddenMesh.position.x = -19;
+        scene.add( hiddenMesh );
+
+        // HÁTSÓ ELEM - 2 VÉGE
+        let backEndConnectionTwoGeometry = new THREE.CylinderGeometry( 8, 12, 3, 32, 1, false);
+        let backEndConnectionTwoMaterial = new THREE.MeshPhongMaterial( { color: 0x008888, wireframe: false } );
+        let backEndConnectionTwoMesh = new THREE.Mesh( backEndConnectionTwoGeometry, backEndConnectionTwoMaterial );
+        backEndConnectionTwoMesh.position.x = -27;
+        backEndConnectionTwoMesh.rotation.z = -Math.PI/2;
+        backEndConnectionTwoMesh.scale.set(1,1.32,1);
+        backEndConnectionTwoMesh.castShadow = true;
+        backEndConnectionTwoMesh.receiveShadow = true;
+        scene.add( backEndConnectionTwoMesh );
+
+        // HÁTSÓ ELEM - 2
+        let backTwoGeometry = new THREE.CylinderGeometry( 12, 12, 20, 32, 1, false);
+        let backTwoMaterial = new THREE.MeshPhongMaterial( { color: 0x336633, wireframe: false } );
+        let backTwoMesh = new THREE.Mesh( backTwoGeometry, backTwoMaterial );
+        backTwoMesh.position.x = -39;
+        backTwoMesh.rotation.x = Math.PI/2;
+        backTwoMesh.rotation.z = Math.PI/2;
+        backTwoMesh.castShadow = true;
+        backTwoMesh.receiveShadow = true;
+        scene.add( backTwoMesh );
+
+        // HÁTSÓ ELEM ÉS KÖZÉPSŐ ELEM CSATLAKOZÁS
+        let backConnectionTwoGeometry = new THREE.CylinderGeometry( 8, 12, 3, 32, 1, false);
+        let backConnectionTwoMaterial = new THREE.MeshPhongMaterial( { color: 0x008888, wireframe: false } );
+        let backConnectionTwoMesh = new THREE.Mesh( backConnectionTwoGeometry, backConnectionTwoMaterial );
+        backConnectionTwoMesh.position.x = -51;
+        backConnectionTwoMesh.rotation.z = Math.PI/2;
+        backConnectionTwoMesh.scale.set(1,1.32,1);
+        backConnectionTwoMesh.castShadow = true;
+        backConnectionTwoMesh.receiveShadow = true;
+        scene.add( backConnectionTwoMesh );
+
+        // ELÜLSŐ ELEM
+        let frontGeometry = new THREE.SphereGeometry( 8, 64, 64, 0, Math.PI * 2, 1.5);
+        let frontMaterial = new THREE.MeshPhongMaterial( { color: 0x0000aa, wireframe: false } );
+        let frontMesh = new THREE.Mesh( frontGeometry, frontMaterial );
+        frontMesh.position.x = -53.55;
+        frontMesh.rotation.z = - Math.PI/2;
+        frontMesh.castShadow = true;
+        frontMesh.receiveShadow = true;
+        scene.add( frontMesh );
+
+        // OLDAL ELEM - 1
+        const torusGeometry = new THREE.TorusGeometry( 20, 2.5, 16, 100, Math.PI );
+        const torusMaterial = new THREE.MeshPhongMaterial( { color: 0x226699, wireframe: false });
+        const torusMesh = new THREE.Mesh( torusGeometry, torusMaterial );
+        torusMesh.position.x = -20;
+        torusMesh.position.z = 12;
+        torusMesh.rotation.x = Math.PI / 2
+        torusMesh.castShadow = true;
+        torusMesh.receiveShadow = true;
+        scene.add( torusMesh );
+
+        // OLDAL ELEM - 2
+        const torusTwoGeometry = new THREE.TorusGeometry( 20, 2.5, 16, 100, Math.PI );
+        const torusTwoMaterial = new THREE.MeshPhongMaterial( { color: 0x226699, wireframe: false });
+        const torusTwoMesh = new THREE.Mesh( torusTwoGeometry, torusTwoMaterial );
+        torusTwoMesh.position.x = -20;
+        torusTwoMesh.position.z = -12;
+        torusTwoMesh.rotation.x = -Math.PI / 2
+        torusTwoMesh.castShadow = true;
+        torusTwoMesh.receiveShadow = true;
+        scene.add( torusTwoMesh );
+
+        // "SZÁRNY" ELEM - 1
+        let wingOneGeometry = new THREE.BoxGeometry( 4, 6, 1 );
+        let wingOneMaterial = new THREE.MeshPhongMaterial( { color: 0x556677, wireframe: false } );
+        let wingOneMesh = new THREE.Mesh( wingOneGeometry, wingOneMaterial );
+        wingOneMesh.position.x = -22;
+        wingOneMesh.position.y = 35;
+        wingOneMesh.scale.y = 9;
+        wingOneMesh.castShadow = true;
+        wingOneMesh.receiveShadow = true;
+        scene.add( wingOneMesh );
+
+        // "SZÁRNY" ELEM - 2
+        let wingTwoGeometry = new THREE.BoxGeometry( 4, 6, 1 );
+        let wingTwoMaterial = new THREE.MeshPhongMaterial( { color: 0x556677, wireframe: false } );
+        let wingTwoMesh = new THREE.Mesh( wingTwoGeometry, wingTwoMaterial );
+        wingTwoMesh.position.x = -16;
+        wingTwoMesh.position.y = 35;
+        wingTwoMesh.scale.y = 9;
+        wingTwoMesh.castShadow = true;
+        wingTwoMesh.receiveShadow = true;
+        scene.add( wingTwoMesh );
+
+        // "SZÁRNY" ELEM - 3
+        let wingThreeGeometry = new THREE.BoxGeometry( 4, 6, 1 );
+        let wingThreeMaterial = new THREE.MeshPhongMaterial( { color: 0x556677, wireframe: false } );
+        let wingThreeMesh = new THREE.Mesh( wingThreeGeometry, wingThreeMaterial );
+        wingThreeMesh.position.x = -22;
+        wingThreeMesh.position.y = -35;
+        wingThreeMesh.scale.y = 9;
+        wingThreeMesh.castShadow = true;
+        wingThreeMesh.receiveShadow = true;
+        scene.add( wingThreeMesh );
+
+        // "SZÁRNY" ELEM - 4
+        let wingFourGeometry = new THREE.BoxGeometry( 4, 6, 1 );
+        let wingFourMaterial = new THREE.MeshPhongMaterial( { color: 0x556677, wireframe: false } );
+        let wingFourMesh = new THREE.Mesh( wingFourGeometry, wingFourMaterial );
+        wingFourMesh.position.x = -16;
+        wingFourMesh.position.y = -35;
+        wingFourMesh.scale.y = 9;
+        wingFourMesh.castShadow = true;
+        wingFourMesh.receiveShadow = true;
+        scene.add( wingFourMesh );
+
+        // Árnyékoló objektum
+        const meteorGeometry = new THREE.SphereGeometry( 8, 64 , 64, 0, Math.PI * 2);
+        const meteorObjectMaterial = new THREE.MeshPhongMaterial( { color: 0x333333, wireframe: false } );
+        meteorMesh = new THREE.Mesh( meteorGeometry, meteorObjectMaterial );
+        meteorMesh.position.x = -60;
+        meteorMesh.position.y = 18;
+        meteorMesh.position.z = 70;
+        meteorMesh.rotation.x = -Math.PI / 4;
+        meteorMesh.castShadow = true;
+        meteorMesh.receiveShadow = true;
+        scene.add( meteorMesh )
+
+        // Lézer 1
+        let laserGeometry = new THREE.BoxGeometry( 0.3, 1, 0.3 );
+        let laserMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: false } );
+        laserMesh = new THREE.Mesh( laserGeometry, laserMaterial );
+        laserMesh.position.x = 4.18;
+        laserMesh.position.y = 0.7;
+        laserMesh.position.z = -2.65;
+        laserMesh.rotateX(Math.PI/2);
+        laserMesh.rotateY(Math.PI/2);
+        laserMesh.receiveShadow = true;
+        laserMesh.castShadow = true;
+        laserPositionZ = laserMesh.position.z;
+
+        // Lézer 2
+        let laser2Geometry = new THREE.BoxGeometry( 0.3, 1, 0.3 );
+        let laser2Material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: false } );
+        laserMesh2 = new THREE.Mesh( laser2Geometry, laser2Material );
+        laserMesh2.position.x = -4.18;
+        laserMesh2.position.y = 0.7;
+        laserMesh2.position.z = -2.65;
+        laserMesh2.rotateX(Math.PI/2);
+        laserMesh2.rotateY(Math.PI/2);
+        laserMesh2.receiveShadow = true;
+        laserMesh2.castShadow = true;
+        laser2PositionZ = laserMesh2.position.z;
+
+
+
+        // Fények
+
+        // Ambiens fény
+        ambientLight = new THREE.AmbientLight( 0xffffff, 0.1 );
+        scene.add( ambientLight );
+
+        // Pont fény
+        pLight = new THREE.PointLight( 0x00ff00, 0.5 );
+        pLight.position.set( -18, 0, -60 );
+        pLight.castShadow = true;
+        pLight.shadow.mapSize.width = 2048;
+        pLight.shadow.mapSize.height = 2048;
+        scene.add( pLight );
+
+        // Pont fény helper
+        let sphereSize = 3;
+        let pointLightHelper = new THREE.PointLightHelper( pLight, sphereSize );
+        scene.add( pointLightHelper );
+
+        // Irány fény
+        dLight = new THREE.DirectionalLight( 0xff0000, 0.7 );
+        dLight.position.set( 60, 55, -55 );
+        dLight.target = backMesh;
+        dLight.castShadow = true;
+        const depth = 100;
+        dLight.shadow.camera.left = - depth;
+        dLight.shadow.camera.right = depth;
+        dLight.shadow.camera.top = depth;
+        dLight.shadow.camera.bottom = - depth;
+        dLight.shadow.mapSize.width = 2048;
+        dLight.shadow.mapSize.height = 2048;
+        scene.add( dLight );
+
+        // Irány fény helper
+        let planeSize = 3;
+        var directionLightHelper = new THREE.DirectionalLightHelper( dLight, planeSize );
+        scene.add( directionLightHelper );
+
+        // Reflektor fény
+        sLight = new THREE.SpotLight( 0x0000ff, 0.9 );
+        sLight.position.set( -100, 30, 120 );
+        sLight.penumbra = 0.8;
+        sLight.angle = Math.PI / 7;
+        sLight.target = meteorMesh;
+        sLight.castShadow = true;
+        sLight.shadow.mapSize.width = 2048;
+        sLight.shadow.mapSize.height = 2048;
+        scene.add( sLight );
+
+        // Reflektor fény helper
+        let spotLightHelper = new THREE.SpotLightHelper( sLight );
+        scene.add( spotLightHelper );
+
+
+
+        // Material
+
+        groupParent = new THREE.Object3D();
+        let textureLoader = new THREE.TextureLoader();
+        let shipTexture = textureLoader.load( 'assets/texture/ship.jpg' );
+        let meteorTexture = textureLoader.load( 'assets/texture/meteor.jpg' );
+        groupLoaded.traverse( function (child ) {
+            if ( child instanceof THREE.Mesh ) {
+                child.material.map = shipTexture;
+            }
+        } );
+        meteorMesh.traverse( function (child ) {
+            if ( child instanceof THREE.Mesh ) {
+                child.material.map = meteorTexture;
+            }
+        } );
+
+        groupParent.add(groupLoaded);
+
+        groupLoaded.position.z = 40;
+        groupLoaded.add(laserMesh);
+        groupLoaded.add(laserMesh2);
+
+        meteorMesh.add(groupParent);
+        meteorMesh.lookAt(hiddenMesh.position);
+
+        hiddenMesh.add(meteorMesh);
+
+        // kontroll panel
+        ctrl = new meshController();
+        addControlGui(ctrl);
+
+        // Az ablak későbbi átméretezése esetén visszahívható függvény megadása
+        window.addEventListener( 'resize', handleWindowResize, false );
+        window.addEventListener( 'keydown', handleText, false );
+
+        // Kamera vezérlés
+        controls = new TrackballControls( camera, renderer.domElement );
+        controls.rotateSpeed = 5.0;
+        controls.panSpeed = 1.0;
+    }
+
+    function handleWindowResize() {
+        // Az ablak átméretezése esetén a kamera vetítési paraméterek újraszámolása
+        HEIGHT = window.innerHeight;
+        WIDTH = window.innerWidth;
+        console.log( 'WIDTH=' + WIDTH + '; HEIGHT=' + HEIGHT );
+        renderer.setSize( WIDTH, HEIGHT );
+        aspectRatio = WIDTH / HEIGHT;
+        camera.aspect = aspectRatio;
+        camera.updateProjectionMatrix();
+
+        render();
+    }
+
+    function handleText(event){
+        if (event.key === 'i'){
+            if (document.getElementById( 'info' ).style.display === "none") {
+                document.getElementById( 'info' ).style.display = "block";
+            } else {
+                document.getElementById( 'info' ).style.display = "none";
+            }
+        }
+    }
+
+    function animate() {
+        // Újabb képkocka rajzolásának kérése.
+        // Maximálisan 60 FPS-t biztosít a rendszer.
+        requestAnimationFrame( animate );
+
+        // Űrhajó forgatás
+        groupParent.rotation.y += 0.005;
+        // Meteor forgatása gui csúszka alapján
+        hiddenMesh.rotation.y = ctrl.meteor * Math.PI / 180.0;
+        // Lézerek mozgatása a távolság vizsgálatával
+        if (distance < 50){
+            // Lézer 1
+            laserMesh.position.z -= 0.3;
+            if (laserMesh.scale.y > 0.03){
+                laserMesh.scale.y -= 0.02;
+            }
+            // Lézer 2
+            laserMesh2.position.z -= 0.3;
+            if (laserMesh2.scale.y > 0.03){
+                laserMesh2.scale.y -= 0.02;
+            }
+
+            distance += 1;
+        }
+        // Eredeti értékek vissza állítása
+        else{
+            laserMesh.position.z = laserPositionZ;
+            laserMesh.scale.x = 0.3;
+            laserMesh.scale.y = 1;
+            laserMesh.scale.z = 0.3;
+
+            laserMesh2.position.z = laser2PositionZ;
+            laserMesh2.scale.x = 0.3;
+            laserMesh2.scale.y = 1;
+            laserMesh2.scale.z = 0.3;
+
+            distance = 0;
+        }
+        // Kameramozgás vezérlése
+        controls.update();
+        // Új képkocka rajzolása
+        render();
+    }
+
+    function render() {
+        // 3D -> 2D vetített kép kiszámítása.
+        // scene 3D színtér képe a camera kamera szemszögéből.
+        renderer.render( scene, camera );
+    }
+
+</script>
+</body>
+</html>
